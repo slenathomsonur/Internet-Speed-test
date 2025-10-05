@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dem Internet Speed Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #fdbb2d;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+        
+        .test-area {
+            margin: 30px 0;
+        }
+        
+        .test-button {
+            background: #1a2a6c;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        
+        .test-button:hover {
+            background: #fdbb2d;
+            color: #1a2a6c;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .test-button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .results {
+            display: none;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .result-label {
+            font-weight: bold;
+            color: #fdbb2d;
+        }
+        
+        .progress-container {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #fdbb2d;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .download-btn {
+            background: #b21f1f;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        
+        .download-btn:hover {
+            background: #fdbb2d;
+            color: #1a2a6c;
+        }
+        
+        .status {
+            margin: 15px 0;
+            font-style: italic;
+        }
+        
+        .location-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dem Internet Speed Test</h1>
+        <p class="subtitle">Test your actual internet speed and download results</p>
+        
+        <div class="test-area">
+            <button id="startTest" class="test-button">Start Speed Test</button>
+            
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            
+            <div id="status" class="status">Ready to test your internet speed</div>
+            
+            <div id="results" class="results">
+                <h2>Test Results</h2>
+                <div class="result-item">
+                    <span class="result-label">Download Speed:</span>
+                    <span id="downloadSpeed">--</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Upload Speed:</span>
+                    <span id="uploadSpeed">--</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Ping:</span>
+                    <span id="ping">--</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">IP Address:</span>
+                    <span id="ipAddress">--</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Location:</span>
+                    <span id="location">--</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">ISP:</span>
+                    <span id="isp">--</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Test Date:</span>
+                    <span id="testDate">--</span>
+                </div>
+                
+                <button id="downloadBtn" class="download-btn">Download Results as TXT</button>
+            </div>
+        </div>
+        
+        <div class="location-info">
+            <p>This test uses your actual internet connection and location data to measure performance.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startTestBtn = document.getElementById('startTest');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const progressBar = document.getElementById('progressBar');
+            const statusEl = document.getElementById('status');
+            const resultsEl = document.getElementById('results');
+            
+            // Result elements
+            const downloadSpeedEl = document.getElementById('downloadSpeed');
+            const uploadSpeedEl = document.getElementById('uploadSpeed');
+            const pingEl = document.getElementById('ping');
+            const ipAddressEl = document.getElementById('ipAddress');
+            const locationEl = document.getElementById('location');
+            const ispEl = document.getElementById('isp');
+            const testDateEl = document.getElementById('testDate');
+            
+            let testInProgress = false;
+            let testResults = {};
+            
+            // Start the speed test
+            startTestBtn.addEventListener('click', startSpeedTest);
+            
+            // Download results
+            downloadBtn.addEventListener('click', downloadResults);
+            
+            async function startSpeedTest() {
+                if (testInProgress) return;
+                
+                testInProgress = true;
+                startTestBtn.disabled = true;
+                statusEl.textContent = "Initializing test...";
+                progressBar.style.width = '10%';
+                
+                try {
+                    // Get location and IP information first
+                    statusEl.textContent = "Getting location information...";
+                    progressBar.style.width = '20%';
+                    
+                    const ipInfo = await getIPInfo();
+                    testResults.ip = ipInfo.ip;
+                    testResults.location = `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`;
+                    testResults.isp = ipInfo.org || 'Unknown ISP';
+                    
+                    // Update UI with location info
+                    ipAddressEl.textContent = testResults.ip;
+                    locationEl.textContent = testResults.location;
+                    ispEl.textContent = testResults.isp;
+                    
+                    // Test ping
+                    statusEl.textContent = "Testing ping...";
+                    progressBar.style.width = '30%';
+                    testResults.ping = await testPing();
+                    pingEl.textContent = `${testResults.ping} ms`;
+                    
+                    // Test download speed
+                    statusEl.textContent = "Testing download speed...";
+                    progressBar.style.width = '50%';
+                    testResults.downloadSpeed = await testDownloadSpeed();
+                    downloadSpeedEl.textContent = `${testResults.downloadSpeed} Mbps`;
+                    
+                    // Test upload speed
+                    statusEl.textContent = "Testing upload speed...";
+                    progressBar.style.width = '80%';
+                    testResults.uploadSpeed = await testUploadSpeed();
+                    uploadSpeedEl.textContent = `${testResults.uploadSpeed} Mbps`;
+                    
+                    // Complete
+                    progressBar.style.width = '100%';
+                    statusEl.textContent = "Test completed!";
+                    
+                    // Set test date
+                    testResults.testDate = new Date().toLocaleString();
+                    testDateEl.textContent = testResults.testDate;
+                    
+                    // Show results
+                    resultsEl.style.display = 'block';
+                    
+                } catch (error) {
+                    console.error('Speed test error:', error);
+                    statusEl.textContent = "Test failed. Please try again.";
+                } finally {
+                    testInProgress = false;
+                    startTestBtn.disabled = false;
+                }
+            }
+            
+            // Get IP and location information
+            async function getIPInfo() {
+                try {
+                    const response = await fetch('https://ipapi.co/json/');
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error getting IP info:', error);
+                    // Fallback to a different service
+                    try {
+                        const response = await fetch('https://api.ipify.org?format=json');
+                        const data = await response.json();
+                        return {
+                            ip: data.ip,
+                            city: 'Unknown',
+                            region: 'Unknown',
+                            country: 'Unknown',
+                            org: 'Unknown ISP'
+                        };
+                    } catch (fallbackError) {
+                        return {
+                            ip: 'Unknown',
+                            city: 'Unknown',
+                            region: 'Unknown',
+                            country: 'Unknown',
+                            org: 'Unknown ISP'
+                        };
+                    }
+                }
+            }
+            
+            // Test ping by measuring response time to a server
+            async function testPing() {
+                const startTime = performance.now();
+                try {
+                    // Using a small request to measure latency
+                    await fetch('https://httpbin.org/delay/0', { 
+                        method: 'HEAD',
+                        cache: 'no-cache'
+                    });
+                    const endTime = performance.now();
+                    return Math.round(endTime - startTime);
+                } catch (error) {
+                    console.error('Ping test failed:', error);
+                    return 'N/A';
+                }
+            }
+            
+            // Test download speed by downloading a file of known size
+            async function testDownloadSpeed() {
+                const fileSizeInBytes = 500000; // 500KB test file
+                const startTime = performance.now();
+                
+                try {
+                    // Using a service that provides files of known size for speed testing
+                    // This is a dummy URL - in a real implementation, you would use actual test files
+                    const testUrl = `https://httpbin.org/bytes/${fileSizeInBytes}`;
+                    
+                    const response = await fetch(testUrl, { cache: 'no-cache' });
+                    await response.blob();
+                    
+                    const endTime = performance.now();
+                    const durationInSeconds = (endTime - startTime) / 1000;
+                    const bitsLoaded = fileSizeInBytes * 8;
+                    const speedMbps = (bitsLoaded / durationInSeconds / 1000000).toFixed(2);
+                    
+                    return speedMbps;
+                } catch (error) {
+                    console.error('Download test failed:', error);
+                    return 'N/A';
+                }
+            }
+            
+            // Test upload speed by uploading data
+            async function testUploadSpeed() {
+                const dataSizeInBytes = 200000; // 200KB test data
+                const testData = new Array(dataSizeInBytes).join('0');
+                const startTime = performance.now();
+                
+                try {
+                    // Using a service that accepts POST requests for upload testing
+                    // This is a dummy URL - in a real implementation, you would use actual upload endpoints
+                    const response = await fetch('https://httpbin.org/post', {
+                        method: 'POST',
+                        body: testData,
+                        headers: {
+                            'Content-Type': 'application/octet-stream'
+                        }
+                    });
+                    
+                    await response.json();
+                    
+                    const endTime = performance.now();
+                    const durationInSeconds = (endTime - startTime) / 1000;
+                    const bitsLoaded = dataSizeInBytes * 8;
+                    const speedMbps = (bitsLoaded / durationInSeconds / 1000000).toFixed(2);
+                    
+                    return speedMbps;
+                } catch (error) {
+                    console.error('Upload test failed:', error);
+                    return 'N/A';
+                }
+            }
+            
+            // Download results as a text file
+            function downloadResults() {
+                if (!testResults.downloadSpeed) return;
+                
+                const content = `
+Dem Internet Speed Test Results
+===============================
+
+Test Date: ${testResults.testDate}
+IP Address: ${testResults.ip}
+Location: ${testResults.location}
+ISP: ${testResults.isp}
+
+Download Speed: ${testResults.downloadSpeed} Mbps
+Upload Speed: ${testResults.uploadSpeed} Mbps
+Ping: ${testResults.ping} ms
+
+Thank you for using Dem Internet Speed Test!
+                `.trim();
+                
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dem_internet_speed_test_${new Date().toISOString().slice(0, 10)}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+    </script>
+</body>
+</html>
